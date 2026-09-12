@@ -57,9 +57,10 @@ bool FrameRepository::Begin(){
     Devices::CalculateMemmoryUsageDifference("FFAT");
     m_started = true;
     displayFFATInfo();
-    
+
     bulkFile = FFat.open("/frames.bulk", FILE_READ);
     if (!bulkFile) {
+        Logger::Info("Frames.bulk is not present in flash, rebuilding it");
         composeBulkFile();
     }
     
@@ -311,6 +312,7 @@ void FrameRepository::composeBulkFile(){
     }
     m_bulkPercentage = 0.0f;
 
+
     m_offsets.clear();
     m_frameCountByAlias.clear();
 
@@ -336,11 +338,14 @@ void FrameRepository::composeBulkFile(){
     JsonArray framesJson = json_doc["frames"];
     char headerFileName[1024];
     char miniHBuffer[1100];
-    
+
     int maxFrames = calculateMaxFrames(framesJson);
 
     if (maxFrames <= 0){
-        OledScreen::CriticalFail("Maybe you forgot to add frames?!");
+        Logger::Info("No frames defined in animations.json");
+        bulkFile.close();
+        generateCacheFile(0);
+        return;
     }
 
     int fileIdx = 0;
@@ -453,28 +458,32 @@ void FrameRepository::generateCacheFile(int bulkSize) {
         for(;;){}
     }
 
+
     SpiRamAllocator allocator;
     JsonDocument  json_doc(&allocator);
 
     json_doc["total_frame_count"] = m_frameCount;
 
-    JsonObject frames_naming = json_doc["frame_name"].to<JsonObject>();
+    if (bulkSize > 0){
 
-    for (const auto& pair : m_offsets) {
-        frames_naming[pair.first] = pair.second;
-    }
+        JsonObject frames_naming = json_doc["frame_name"].to<JsonObject>();
 
-    JsonObject frames_counting = json_doc["frame_count"].to<JsonObject>();
+        for (const auto& pair : m_offsets) {
+            frames_naming[pair.first] = pair.second;
+        }
 
-    for (const auto& pair : m_frameCountByAlias) {
-        Serial.printf("Storing %s as %d\n", pair.first.c_str(), pair.second);
-        frames_counting[pair.first] = pair.second;
-    }
+        JsonObject frames_counting = json_doc["frame_count"].to<JsonObject>();
 
-    JsonArray frame_flash_offset = json_doc["frame_flash_offset"].to<JsonArray>();
+        for (const auto& pair : m_frameCountByAlias) {
+            Serial.printf("Storing %s as %d\n", pair.first.c_str(), pair.second);
+            frames_counting[pair.first] = pair.second;
+        }
 
-    for (int i = 0; i < m_frameCount+1; i++){
-        frame_flash_offset.add(m_bulkFileOffset[i]);
+        JsonArray frame_flash_offset = json_doc["frame_flash_offset"].to<JsonArray>();
+
+        for (int i = 0; i < m_frameCount+1; i++){
+            frame_flash_offset.add(m_bulkFileOffset[i]);
+        }
     }
 
     json_doc["bulk_size"] = bulkSize;
@@ -484,13 +493,14 @@ void FrameRepository::generateCacheFile(int bulkSize) {
 
     // Serialize JSON to file
     if (serializeJson(json_doc, cache) == 0) {
-        Serial.println("Failed to write to file.");
+        Logger::Info("Failed to write json data to cache.json");
     }
     
 
     json_doc.clear();
 
     cache.close();
+    Logger::Info("Generated cache.json");
 }
 
 std::string PngErrorToString(int error) {

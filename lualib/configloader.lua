@@ -3,6 +3,8 @@ local _M = {}
 local json = require("json")
 local CONFIG_FILES_DEFAULT = {"/animation.json", "/keybinds.json", "/misc.json", "/wifi.json",  "/hardware.json"}
 
+local requiredConfigs = {"expressions", "overlays", "frames", "servos","leds","boop","fft","scripts",}
+
 function _M.LoadAndMerge(filename)
 	local fp, err = io.open(filename, "r")
 	if not fp then 
@@ -27,14 +29,13 @@ function _M.Load()
 		_M.LoadAndMerge(filename)
 	end
 
-	if not _M.config.expressions or #_M.config.expressions == 0 then  
-		error("Config is missing 'expressions'")
+	for _, name in pairs(requiredConfigs) do
+		if not _M.config[name] then  
+			error("Config is missing '"..name.."'")
+		end
 	end
 
 
-	if not _M.config.scripts or #_M.config.scripts == 0 then  
-		error("Config is missing 'scripts'")
-	end
 
 	return
 end

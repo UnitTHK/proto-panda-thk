@@ -69,6 +69,28 @@ void HardwareConfig::loadServosAndStart(JsonObject servos){
     if (pinsArray.size() == 0) {
         return;
     }
+
+    float dutyBegin = 0.025f;
+    float dutyEnd = 0.125f;
+    float maxAngle = 180;
+    int frequency = 50;
+
+    if (!servos["minPulseDuty"].is<float>()) {
+        dutyBegin = servos["minPulseDuty"];
+    }
+
+    if (!servos["maxPulseDuty"].is<float>()) {
+        dutyEnd = servos["maxPulseDuty"];
+    }
+
+    if (!servos["frequency"].is<float>()) {
+        frequency = servos["frequency"];
+    }
+
+    if (!servos["maxAngle"].is<float>()) {
+        maxAngle = servos["maxAngle"];
+    }
+
     
     std::vector<int> pins;
     for (JsonVariant pin : pinsArray) {
@@ -78,7 +100,7 @@ void HardwareConfig::loadServosAndStart(JsonObject servos){
     }
     
     if (pins.size() > 0) {
-        Devices::StartServos(pins);
+        Devices::StartServos(pins, frequency, dutyBegin, dutyEnd, maxAngle);
     }
 }
 

@@ -98,7 +98,11 @@
 
     "servos": {
         "enabled": false,
-        "pins": [1,2]
+        "pins": [1,2],
+        "frequency": 50,
+        "minPulseDuty": 0.025,
+        "maxPulseDuty": 0.125,
+        "maxAngle": 180
     },
     "leds": { 
         "pin_mode": "double",

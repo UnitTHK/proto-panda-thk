@@ -589,10 +589,11 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("getFreeHeap", Devices::getFreeHeap); 
   m_lua->FuncRegister("getTotalHeap", Devices::getTotalHeap); 
   #ifdef USE_SERVO
-  m_lua->FuncRegister("servoPause", Devices::StartServos);
+  m_lua->FuncRegisterOptional("startServos", Devices::StartServos, 180, 0.125f, 0.025f, 50);
   m_lua->FuncRegister("servoPause", Devices::ServoPause);
   m_lua->FuncRegister("servoResume", Devices::ServoResume); 
   m_lua->FuncRegister("servoMove", Devices::ServoMove);
+  m_lua->FuncRegister("servoCount", Devices::ServoCount);
   #endif
   m_lua->FuncRegister("hasServo", Devices::HasServo);
 
@@ -907,7 +908,8 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("SHADER_TEXTURE",      (int)SHADER_TEXTURE);
   m_lua->setConstant("SHADER_TRANS",        (int)SHADER_TRANS);
   
-  m_lua->setConstant("SHADER_LAST",         (int)SHADER_TRANS);
+  m_lua->setConstant("SHADER_LAST",         (int)SHADER_LAST);
+  m_lua->setConstant("SHADER_FIRST",         (int)SHADER_FIRST);
 
 
   m_lua->setConstant("MODEL_FRAME_ID_OFFSET",      (int)MODEL_FRAME_ID_OFFSET);

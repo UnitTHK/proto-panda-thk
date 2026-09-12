@@ -130,6 +130,11 @@ Servos
 */
 
 #define USE_SERVO
+#define SERVO_RESOLUTION_BITS 14
+
+
+//#define USE_INTERNAL_ACCELEROMETER
+#define INTERNAL_ACCELEROMETER_ADDR 107
 
 /*
     DMA display, or actual display

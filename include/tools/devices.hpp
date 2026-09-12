@@ -50,7 +50,7 @@ class Devices{
         static bool HasLidar(){
             return s_hasLidar;
         }
-        static bool StartServos(std::vector<int> pins);
+        static bool StartServos(std::vector<int> pins, int frequency=50, float dutyBegin=0.025, float dutyEnd=0.125f, int maxAngle=180);
         static bool HasServo(){
             return s_hasServo;
         }
@@ -101,6 +101,9 @@ class Devices{
             }
         };
         
+        static int ServoCount(){
+            return servoCount;
+        };
         static bool ServoMove(int servoId, float angle);
         static bool ServoPause(int servoId);
         static bool ServoResume(int servoId);

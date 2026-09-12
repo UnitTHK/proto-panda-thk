@@ -660,6 +660,7 @@ function _M.handleMenu(dt)
         end
         _M.holdTimer = millis()+2000
         _M.manualPairing = false
+        _M.bootbutton_state = modeBoot
         _M.editbutton_state = mode
     end
     if _M.readyToPairCount and (mode == 0 or modeBoot == 1) and _M.holdTimer < millis() then  

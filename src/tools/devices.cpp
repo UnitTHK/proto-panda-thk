@@ -373,25 +373,26 @@ void Devices::StartAvaliableDevices(){
     }
 #endif
 #ifdef USE_INTERNAL_ACCELEROMETER
-  lsm6 = new LSM6DS3(Wire, USE_INTERNAL_ACCELEROMETER);
+  lsm6 = new LSM6DS3(Wire, INTERNAL_ACCELEROMETER_ADDR);
   if (!lsm6->begin()){
     Logger::Info("Failed to initialize internal accelerometer");
   }else{
     Logger::Info("internal accelerometer initialized");
   }
 #endif
-  s_hasServo = false;
 }
 
-bool Devices::StartServos(std::vector<int> pins){
+bool Devices::StartServos(std::vector<int> pins, int frequency, float dutyBegin, float dutyEnd, int maxAngle){
   if (servos != nullptr){
     return false;
   }
   #ifdef USE_SERVO
     servos = new s3servo[pins.size()];
+    int bitRange = (1 << SERVO_RESOLUTION_BITS);
     for (int i=0;i<pins.size();i++){
-      servos[i].attach(pins[i], i);
+      servos[i].attach(pins[i], frequency, 0, maxAngle, bitRange * dutyBegin, bitRange * dutyEnd);
     }
+    servoCount = pins.size();
     s_hasServo = true;
     return true;
   #else
