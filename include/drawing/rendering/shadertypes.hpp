@@ -1,0 +1,16 @@
+#pragma once 
+
+
+enum ShaderType{
+    SHADER_FIRST = 0,
+    SHADER_NONE = SHADER_FIRST,
+
+    SHADER_RAINBOW,
+    SHADER_FFT,
+    SHADER_FIRE,
+    SHADER_TEXTURE,
+    SHADER_ROW_SHIFT,
+    SHADER_TRANS,
+
+    SHADER_LAST=SHADER_TRANS,
+};

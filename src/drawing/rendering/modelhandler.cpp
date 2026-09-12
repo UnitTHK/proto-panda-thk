@@ -1,30 +1,24 @@
 #include "drawing/rendering/modelhandler.hpp"
 #include "tools/devices.hpp"
 #include "tools/oledscreen.hpp"
+#include "drawing/framebuffer.hpp"
 
 void ModelHandler::RenderModels(std::vector<Model*> mdls){
     
     for (auto& model : mdls) {
         if (model->triangleCount == 0 || model->visible == false) continue;
-        
         for (int i = model->triangleCount - 1; i >= 0; i--) {
-            model->RasterTriangleWithBitmap(this, i);
+            model->RasterTriangleWithBitmap(this, i, g_frameBuffer);
         }
     }
 }
 
 
-void ModelHandler::RenderScene(std::vector<Model*> mdls){
+void ModelHandler::RenderScene(std::vector<Model*> mdls, ShaderType shader, float shaderStrenght){
     Devices::Display->startWrite();
     memset(pixelBitmap, 0,  CANVAS_HEIGHT * (CANVAS_WIDTH/8) * sizeof(uint8_t));
-    uint8_t r, g, b;
-    Devices::Display->color565to888(0, r, g, b);
-    for (uint16_t y = 0; y < CANVAS_HEIGHT; y++) {
-        for (uint16_t x = 0; x < CANVAS_WIDTH; x++) {
-            Devices::Display->setPixelWithFlip(x, y, r, g, b, FlipConfig::DefaultFlipConfig);
-        }
-    }
+    g_frameBuffer.ClearFrameBuffer();
     RenderModels(mdls);
-    OledScreen::screenFlipId++;
+    g_frameBuffer.DrawFrameBuffer(FlipConfig::DefaultFlipConfig, shader, shaderStrenght);
     Devices::Display->endWrite();
 }

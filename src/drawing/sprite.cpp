@@ -173,9 +173,79 @@ void Sprite::Draw(FlipConfig flipSettings, ShaderType shader_p, float shaderStre
             uint8_t b;
             BaseDisplay::color565to888(color, r,g,b);
 
-            ShaderProcessor::UpdateColorByShader(finalX, finalY, r, g, b, shader_p, shaderStrenght_p);
+            ShaderProcessor::UpdateColorByShader(finalX, finalY, r, g, b, shader_p, shaderStrenght_p, nullptr);
 
             Devices::Display->setPixelWithFlip(finalX, finalY, r,g,b, flipSettings);
+        }
+    }
+}
+
+
+void Sprite::DrawToFrameBuffer(FrameBuffer &fb){
+    if (currentFrame < 0 || currentFrame > frames.size()){
+        return;
+    }
+    if (!visibility){
+        return;
+    }
+   
+    int targetW = w;
+    int targetH = h;
+
+    
+    BasicTexture *tx = frames[currentFrame];
+    const int txW = tx->width;
+    const int txH = tx->height;
+    const uint16_t *txPixels = tx->pixels;
+    const uint16_t transColor = tx->transparentColor;
+
+    int cropW, cropH;
+    if (view.getSize(0, cropW, cropH)){
+        targetW = cropW;
+        targetH = cropH;
+    }
+    
+    if (targetW > txW){
+        targetW = txW;
+    }
+    if (targetH > txH){
+        targetH = txH;
+    }
+
+    float cx = targetW * 0.5f;
+    float cy = targetH * 0.5f;
+    
+    for (int dy=0;dy<targetH;dy++){
+        
+        for (int dx=0;dx<targetW;dx++){
+            int xIn;
+            int yIn;
+            if (!view.getPosition(dx, dy, xIn, yIn)){
+                continue;
+            }
+            if (xIn < 0 || xIn >= txW || yIn >= txH || yIn < 0){
+                continue;
+            }
+            uint16_t color = txPixels[yIn * txW + xIn];
+            if (color == transColor){
+                continue;
+            }
+
+            int outDx = dx;
+            int outDy = dy;
+
+            if (rotated) {
+                float fx = dx - cx;
+                float fy = dy - cy;
+                float rx = fx * cosA - fy * sinA;
+                float ry = fx * sinA + fy * cosA;
+                outDx = (int)lroundf(rx + cx);
+                outDy = (int)lroundf(ry + cy);
+            }
+            int16_t finalX = x+outDx;
+            int16_t finalY = y+outDy;
+
+            fb.SetPixelSafe(finalX, finalY, color);
         }
     }
 }

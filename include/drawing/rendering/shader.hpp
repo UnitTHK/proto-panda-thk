@@ -1,23 +1,19 @@
 #pragma once
 #include "drawing/rendering/primitives.hpp"
+#include "drawing/rendering/shadertypes.hpp"
+#include "drawing/framebuffer.hpp"
 #include "tools/config_default.hpp"
 
 
-enum ShaderType{
-    SHADER_NONE,
-    SHADER_RAINBOW,
-    SHADER_FIRE,
-    SHADER_TEXTURE,
-    SHADER_TRANS,
-};
-
 class ShaderProcessor{
     private:
-        static void ShaderNone(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType &shdr, float &shaderStrenght);
-        static void ShaderRainbow(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType &shdr, float &shaderStrenght);
-        static void ShaderFire(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType &shdr, float &shaderStrength);
-        static void ShaderTexture(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType &shdr, float &shaderStrength);
-        static void ShaderTrans(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType &shdr, float &shaderStrength);
+        static void ShaderNone(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrenght, FrameBuffer *fb);
+        static void ShaderRainbow(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrenght, FrameBuffer *fb);
+        static void ShaderRowShift(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrenght, FrameBuffer *fb);
+        static void ShaderFire(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb);
+        static void ShaderTexture(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb);
+        static void ShaderTrans(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb);
+        static void ShaderFFT(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb);
 
         static uint32_t FrameId;
         static uint32_t Time;
@@ -27,6 +23,6 @@ class ShaderProcessor{
         static void SetTextureAddr(uint16_t *addr){
             Texture = addr;
         }
-        static void UpdateColorByShader(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType &shdr, float &shaderStrenght);
+        static void UpdateColorByShader(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrenght, FrameBuffer *fb);
         static void IncrFrame();
 };

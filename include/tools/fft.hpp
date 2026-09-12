@@ -22,7 +22,9 @@ class FFT {
       m_noiseThreshold = n;
     }
 
-    int  getBandCount();
+    inline int  getBandCount(){
+      return m_bandCount;
+    };
     bool isRunning();
     int  getBandValue(int i);
 

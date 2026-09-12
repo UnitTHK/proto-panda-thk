@@ -206,13 +206,12 @@ void KeyframePlayer::runModelAnim(uint32_t dt){
     }
 
     for (auto &mod : obj->m_models){
-        if (m_defaultShader != SHADER_NONE && mod->GetShader() == SHADER_NONE){
-            mod->SetShaderWithStrenght(m_defaultShader, m_defaultShaderStrenght);
-        }
+
         mod->Recalculate();
         mod->CopyToRaster();
     }        
-    g_modelHandler.RenderScene(obj->m_models);    
+
+    g_modelHandler.RenderScene(obj->m_models, m_defaultShader, m_defaultShaderStrenght);    
 }
 
 bool KeyframePlayer::Update(uint32_t dt){
@@ -460,25 +459,6 @@ void KeyframeTrack::applyTransformations(uint32_t dt, uint32_t frameSum, Keyfram
                 storage[1] = 0;
             }
             break;
-        }
-        case KEYFRAME_SHADER:{
-            ShaderType shdr = (ShaderType)nextKf.color;
-            if (lastIteration){
-                obj->SetShaderWithStrenght(shdr, 1.0f);
-                break;
-            }
-
-            float delta = 0;
-            if (nextKf.deltaToNext != 0){
-                delta = ((float)(frameSum-nextKf.interpolationStartedAt))/(float)nextKf.deltaToNext;
-            }else{
-                delta = 1.0f;
-            }
-            if (shdr == SHADER_NONE){
-                shdr = obj->GetShader();
-                delta = 1.0f - delta;
-            }
-            obj->SetShaderWithStrenght(shdr, delta);
         }
     
     default:

@@ -4,6 +4,7 @@
 #include "tools/displays.hpp"
 #include "tools/sectionview.hpp"
 #include "drawing/rendering/shader.hpp"
+#include "drawing/framebuffer.hpp"
 
 class BasicTexture{
     public:
@@ -130,5 +131,7 @@ class Sprite{
         int LoadFromPng(std::string name);
 
         void Draw(FlipConfig flipSettings, ShaderType shader, float shaderStrenght);
+        void DrawToFrameBuffer(FrameBuffer &fb);
+    
 };
 

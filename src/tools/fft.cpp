@@ -197,9 +197,6 @@ void FFT::deinit() {
     freeBuffers();
 }
 
-int  FFT::getBandCount(){ 
-    return m_bandCount; 
-}
 bool FFT::isRunning(){ 
     return m_running; 
 }

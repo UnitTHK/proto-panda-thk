@@ -128,7 +128,6 @@ class Animation{
     private:
         void drawFFTOverlay(FlipConfig flipSettings, int16_t frameId);
         inline void drawPixelAt(int16_t &x, int16_t &y, uint16_t &color, uint8_t &r, uint8_t &g, uint8_t &b, int &byteIdOled, FlipConfig &flipSettings);
-        inline void adjustColor(int16_t &x, int16_t &y, uint16_t &color, uint8_t &r, uint8_t &g, uint8_t &b, int16_t &frameId);
         std::stack<AnimationSequence> m_animations;
         bool internalUpdate(uint32_t dt, AnimationSequence &seq);
         ShaderType m_shader;

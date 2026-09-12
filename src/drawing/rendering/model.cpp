@@ -1,7 +1,6 @@
 #include "drawing/rendering/model.hpp"
 #include "drawing/rendering/modelhandler.hpp"
 #include "tools/devices.hpp"
-#include "tools/oledscreen.hpp"
 
 bool PointGroups::Has(u_int32_t group){
     if (group >= groupCount){
@@ -258,8 +257,6 @@ void Model::Reset() {
     if (!batchOperations){
         Recalculate();
     }
-    m_shader = SHADER_NONE;
-    shaderStrenght = 1.0f;
     visible = true;
 }
 
@@ -429,7 +426,7 @@ int Model::AddPointGroup(PointList pts) {
     return bones.points.size() - 1; 
 }
 
-void Model::RasterTriangleWithBitmap(ModelHandler *scene, int i){
+void Model::RasterTriangleWithBitmap(ModelHandler *scene, int i, FrameBuffer &fb){
 
     int baseIdx = i * 3;
 
@@ -486,9 +483,10 @@ void Model::RasterTriangleWithBitmap(ModelHandler *scene, int i){
                 break;
             }
             if (!scene->MarkPixel(a, y0)) {
-                uint8_t rr=r, gg=g, bbl=bl;
-                ShaderProcessor::UpdateColorByShader(a, y0, rr, gg, bbl, m_shader, shaderStrenght);
-                Devices::Display->setPixelWithFlip(a, y0, rr, gg, bbl, FlipConfig::DefaultFlipConfig);
+                //uint8_t rr=r, gg=g, bbl=bl;
+                //ShaderProcessor::UpdateColorByShader(a, y0, rr, gg, bbl, m_shader, shaderStrenght);
+                fb.SetPixel(a, y0, color);
+                //Devices::Display->setPixelWithFlip(a, y0, rr, gg, bbl, FlipConfig::DefaultFlipConfig);
             }
         }
         return;
@@ -535,9 +533,10 @@ void Model::RasterTriangleWithBitmap(ModelHandler *scene, int i){
                 break;
             }
             if (!scene->MarkPixel(xx, y)) {
-                uint8_t rr=r, gg=g, bbl=bl;
-                ShaderProcessor::UpdateColorByShader(a, y0, rr, gg, bbl, m_shader, shaderStrenght);
-                Devices::Display->setPixelWithFlip(xx, y, rr, gg, bbl, FlipConfig::DefaultFlipConfig);
+                //uint8_t rr=r, gg=g, bbl=bl;
+                //ShaderProcessor::UpdateColorByShader(a, y0, rr, gg, bbl, m_shader, shaderStrenght);
+                //Devices::Display->setPixelWithFlip(xx, y, rr, gg, bbl, FlipConfig::DefaultFlipConfig);
+                fb.SetPixel(xx, y, color);
             }
         }
     }
@@ -568,9 +567,10 @@ void Model::RasterTriangleWithBitmap(ModelHandler *scene, int i){
                 break;
             }
             if (!scene->MarkPixel(xx, y)) {
-                uint8_t rr=r, gg=g, bbl=bl;
-                ShaderProcessor::UpdateColorByShader(a, y0, rr, gg, bbl, m_shader, shaderStrenght);
-                Devices::Display->setPixelWithFlip(xx, y, rr, gg, bbl, FlipConfig::DefaultFlipConfig);
+                fb.SetPixel(xx, y, color);
+                //uint8_t rr=r, gg=g, bbl=bl;
+                //ShaderProcessor::UpdateColorByShader(a, y0, rr, gg, bbl, m_shader, shaderStrenght);
+                //Devices::Display->setPixelWithFlip(xx, y, rr, gg, bbl, FlipConfig::DefaultFlipConfig);
             }
         }
     }
@@ -598,17 +598,10 @@ Vec2f Model::GetPointGroupCenter(uint32_t pointId){
     return bones.GetCenter(pointId);
 }
 
-void Model::SetShaderWithStrenght(ShaderType t, float strenght){
-    m_shader = t;
-    shaderStrenght = strenght;
-
-}
-
 void Model::TranslatePoint(uint32_t pointid, Vec2f pos){
     points.x[pointid] += pos.x;
     points.y[pointid] += pos.y;
 }
-
 
 
 void Model::SetPointPosition(uint32_t pointid, Vec2f pos){

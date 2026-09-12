@@ -13,8 +13,7 @@ local GetCurrentExpressionId = expressions.GetCurrentExpressionId
 
 local _M = {
     boopIsOn = false,
-    config = {
-    },   
+    config = {},   
     avgRead = 0,
     mode = "lidar",
     
@@ -45,6 +44,10 @@ function _M.Load()
 
     if not _M.config["trigger_mode"] then
         _M.config["trigger_mode"] = "lidar"
+    end
+
+    if _M.config["enabled"]  == false then  
+        return
     end
 
 

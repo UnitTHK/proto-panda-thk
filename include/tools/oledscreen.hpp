@@ -50,8 +50,7 @@ class OledScreen{
         static Panda_SSD1306 display;
         static bool consoleMode;
         static PSRAMList<PSRAMString> lines;
-        static uint8_t* DisplayFace[2];
-        static uint8_t screenFlipId;
+        static uint8_t* DisplayFace;
 
         static PSRAMVector<OledIcon> icons;
     private:

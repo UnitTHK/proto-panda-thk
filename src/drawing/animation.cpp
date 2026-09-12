@@ -106,25 +106,7 @@ int AnimationSequence::GetFrameId(){
     return m_frames[m_frame];
 }
 
-void Animation::drawPixelAt(int16_t &x, int16_t &y, uint16_t &color, uint8_t &r, uint8_t &g, uint8_t &b, int &byteIdOled, FlipConfig &flipSettings){
-    Devices::Display->setPixelWithFlip(x,y, r, g, b, flipSettings);
-    if (m_copyToFrameBuffer){
-        m_frameBuffer[byteIdOled] = color;
-    }
-    byteIdOled++;
-}
 
-void Animation::adjustColor(int16_t &x, int16_t &y, uint16_t &color, uint8_t &r, uint8_t &g, uint8_t &b, int16_t &frameId){
-    Devices::Display->color565to888(color, r, g, b);
-    //1100011100011000    = 0xC718
-    //We know each color has 5 6 and 5 bits. So to check if the color is strong enough, we're using this mask that discards
-    //each of 3 initial bits of each color
-    //If any of the remaining bits are 1, the whole condition will give != 0 and therefore color!
-    /*if (m_shader == 1 || (r == 57 && g == 121 && b == 181)){
-
-    }*/
-    ShaderProcessor::UpdateColorByShader(x, y, r, g, b, m_shader, m_shaderStrenght);
-}
 
 void Animation::EnableFrameBuffer(bool enable){
     if (enable && m_frameBuffer == nullptr){
@@ -277,10 +259,7 @@ void Animation::drawFFTOverlay(FlipConfig flipSettings, int16_t frameId) {
                 int16_t x = i * BAR_W + xOffset;
 
                 uint16_t color = Devices::Display->color565(r, g, b);
-                adjustColor(x, y, color, r, g, b, frameId);
-
-                int byteIdOled = y * CANVAS_WIDTH + x;
-                drawPixelAt(x, y, color, r, g, b, byteIdOled, flipSettings);
+                g_frameBuffer.SetPixel(x, y, color);
             }
         }
     }
@@ -328,7 +307,6 @@ void Animation::DrawFrame(int i){
 
     auto currentModeLeft = m_colorMode;
     auto currentModeRight = m_colorMode;
-
     
     uint8_t r, g, b;
     uint8_t version = buffer[0];
@@ -372,10 +350,9 @@ void Animation::DrawFrame(int i){
                 iter--;
                 color |= (readBuffer[compressionReadPos++] << 8); 
 
-                adjustColor(x, y, color, r, g, b, frameId);
                 
                 for (int iddx=0;iddx<lenght;iddx++){
-                    drawPixelAt(x, y, color, r, g, b, byteIdOled, flipSettings);
+                    g_frameBuffer.SetPixel(x, y, color);
                     x++;
                     if (x >= CANVAS_WIDTH){
                         x = 0;
@@ -402,8 +379,8 @@ void Animation::DrawFrame(int i){
 
         for (int16_t idx=begin;idx<finish;idx++){
             uint16_t color = readBuffer[idx];
-            adjustColor(x, y, color, r, g, b, frameId);
-            drawPixelAt(x, y, color, r, g, b, byteIdOled, flipSettings);
+
+            g_frameBuffer.SetPixel(x, y, color);
             x++;
             if (x >= CANVAS_WIDTH){
                 x = 0;
@@ -416,7 +393,7 @@ void Animation::DrawFrame(int i){
     if (m_spritesInScene.size() > 0){
         xSemaphoreTake(m_SpriteMutex, portMAX_DELAY);
         for (auto &sp : m_spritesInScene){
-            m_overlaySprites[sp]->Draw(flipSettings, m_shader, m_shaderStrenght);
+            m_overlaySprites[sp]->DrawToFrameBuffer(g_frameBuffer);
         }
         xSemaphoreGive(m_SpriteMutex);
     }
@@ -425,10 +402,12 @@ void Animation::DrawFrame(int i){
         drawFFTOverlay(flipSettings, frameId);
     }
 
+    g_frameBuffer.DrawFrameBuffer(flipSettings, m_shader, m_shaderStrenght);
     Devices::Display->endWrite();
     m_needFlip = true;
     m_frameDrawDuration = micros()-ld;
     m_cycleDuration =  micros()-begin;
+
 }
 
 

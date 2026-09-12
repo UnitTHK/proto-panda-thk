@@ -1,5 +1,6 @@
 #include "drawing/rendering/shader.hpp"
 #include "tools/devices.hpp"
+#include "tools/fft.hpp"
 #include <math.h>
 #include <algorithm>
 #include <Arduino.h>
@@ -9,6 +10,7 @@ uint32_t ShaderProcessor::Time = 0;
 uint16_t* ShaderProcessor::Texture = nullptr;
 
 void ShaderProcessor::Hsv2Rgb(uint8_t h, uint8_t s, uint8_t v, uint8_t& r, uint8_t& g, uint8_t& b) {
+    if (h == 255) h = 254;
   // Convert hue to degrees
   float hue = h / 255.0f * 360.0f;
 
@@ -68,11 +70,48 @@ void ShaderProcessor::Hsv2Rgb(uint8_t h, uint8_t s, uint8_t v, uint8_t& r, uint8
   b = (uint8_t)((b_temp + m) * 255);
 }
 
-void ShaderProcessor::ShaderNone(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType &shdr, float &shaderStrength){
+void ShaderProcessor::ShaderNone(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb){}
+
+
+void ShaderProcessor::ShaderRowShift(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b,
+                                      ShaderType shdr, float shaderStrength, FrameBuffer *fb){
+
+    static const int8_t waveTable[4] = { -2, 0, 2, 0 };
+
+    unsigned long ticks = ShaderProcessor::Time / 50; // 100ms per step
+
+    // Phase offset by row -> diagonal wave: row0 = 0,-1,0,1 ; row1 = 1,0,-1,0 ; row2 = 0,1,0,-1 ...
+    long phase = ((long)ticks - y) % 4;
+    if (phase < 0) phase += 4;
+
+    int8_t shiftAmount = waveTable[phase];
+
+    // Source column, wrapped so pixels scroll around instead of disappearing at the edge
+    int16_t sizeX = (int16_t)fb->GetSizeX();
+    int16_t srcX = x - shiftAmount;
+    if (srcX < 0)          srcX += sizeX;
+    else if (srcX >= sizeX) srcX -= sizeX;
+
+    uint16_t packed = fb->GetPixel(srcX, y);
+    uint8_t shiftedR, shiftedG, shiftedB;
+    Devices::Display->color565to888(packed, shiftedR, shiftedG, shiftedB);
+
+    if (shaderStrength >= 1.0f) {
+        r = shiftedR;
+        g = shiftedG;
+        b = shiftedB;
+    } else if (shaderStrength <= 0.0f) {
+        // no effect, keep original
+    } else {
+        r = (uint8_t)(r * (1.0f - shaderStrength) + shiftedR * shaderStrength);
+        g = (uint8_t)(g * (1.0f - shaderStrength) + shiftedG * shaderStrength);
+        b = (uint8_t)(b * (1.0f - shaderStrength) + shiftedB * shaderStrength);
+    }
 }
 
 
-void ShaderProcessor::ShaderRainbow(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType &shdr, float &shaderStrength){
+
+void ShaderProcessor::ShaderRainbow(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb){
 
     uint8_t rainbowR, rainbowG, rainbowB;
 
@@ -96,74 +135,131 @@ void ShaderProcessor::ShaderRainbow(int16_t &x, int16_t &y, uint8_t &r, uint8_t 
     }
 }
 
-void ShaderProcessor::ShaderFire(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType &shdr, float &shaderStrength){
-    
-    float time = ShaderProcessor::Time * 0.001f;
-    
-    // Fire parameters
-    float heightFactor = 1.0f - (float)y / 32.0f;  // 0 at top, 1 at bottom
-    
-    // Add turbulence using multiple sine waves
-    float turbulence1 = sin(x * 0.2f + time * 5.0f) * 0.3f;
-    float turbulence2 = sin(x * 0.5f - time * 7.5f) * 0.2f;
-    float turbulence3 = cos(y * 0.3f + time * 10.0f) * 0.15f;
-    
-    float fireIntensity = heightFactor + turbulence1 + turbulence2 + turbulence3;
-    
-    // Flickering effect
-    float flicker = 0.7f + 0.3f * sin(time * 20.0f + x * 0.5f);
-    fireIntensity *= flicker;
-    
+void ShaderProcessor::ShaderFire(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb){
+
+    if (r == 0 && g == 0 && b == 0){
+        return;
+    }
+
+    constexpr int SIN_LUT_SIZE = 256; // power of 2 -> cheap wraparound via bitmask
+    constexpr int MAX_ROWS = 64;
+    constexpr int MAX_COLS = 64;
+
+    static float sinLUT[SIN_LUT_SIZE];
+    static bool  sinLUTReady = false;
+    if (!sinLUTReady){
+        for (int i = 0; i < SIN_LUT_SIZE; ++i){
+            sinLUT[i] = sinf(i * (TWO_PI / SIN_LUT_SIZE));
+        }
+        sinLUTReady = true;
+    }
+
+    // Local lambdas so FastSin/FastCos stay contained to this function too
+    auto FastSin = [](float radians) -> float {
+        float scaled = radians * (SIN_LUT_SIZE / TWO_PI);
+        int idx = (int)scaled & (SIN_LUT_SIZE - 1); // two's-complement wrap, works for negatives too
+        return sinLUT[idx];
+    };
+    auto FastCos = [&](float radians) -> float {
+        return FastSin(radians + HALF_PI);
+    };
+
+    static unsigned long cachedRowTime = 0xFFFFFFFFUL;
+    static float rowBase[MAX_ROWS];       // heightFactor + turbulence3
+    static bool  rowBlueFlame[MAX_ROWS];  // y > 28
+
+    static unsigned long cachedColTime = 0xFFFFFFFFUL;
+    static float colTurbulence[MAX_COLS]; // turbulence1 + turbulence2
+    static float colFlicker[MAX_COLS];
+
+    unsigned long rawTime = ShaderProcessor::Time;
+    float time = rawTime * 0.001f;
+
+    uint16_t sizeY = fb->GetSizeY();
+    uint16_t sizeX = fb->GetSizeX();
+    bool cachable = (sizeX <= MAX_COLS) && (sizeY <= MAX_ROWS);
+
+    if (cachable && rawTime != cachedRowTime){
+        for (uint16_t yy = 0; yy < sizeY; ++yy){
+            float heightFactor = 1.0f - (float)yy * 0.03125f; // /32.0f
+            float turbulence3  = FastCos(yy * 0.3f + time * 10.0f) * 0.15f;
+            rowBase[yy] = heightFactor + turbulence3;
+            rowBlueFlame[yy] = (yy > 28);
+        }
+        cachedRowTime = rawTime;
+    }
+
+    if (cachable && rawTime != cachedColTime){
+        for (uint16_t xx = 0; xx < sizeX; ++xx){
+            float turbulence1 = FastSin(xx * 0.2f + time * 5.0f) * 0.3f;
+            float turbulence2 = FastSin(xx * 0.5f - time * 7.5f) * 0.2f;
+            colTurbulence[xx] = turbulence1 + turbulence2;
+            colFlicker[xx] = 0.7f + 0.3f * FastSin(time * 20.0f + xx * 0.5f);
+        }
+        cachedColTime = rawTime;
+    }
+
+    float fireIntensity;
+    bool blueFlameEligible;
+
+    if (cachable){
+        fireIntensity = (rowBase[y] + colTurbulence[x]) * colFlicker[x];
+        blueFlameEligible = rowBlueFlame[y];
+    } else {
+        // Fallback for buffers larger than the cache — same math as before, just with the LUT
+        float heightFactor = 1.0f - (float)y * 0.03125f;
+        float turbulence1 = FastSin(x * 0.2f + time * 5.0f) * 0.3f;
+        float turbulence2 = FastSin(x * 0.5f - time * 7.5f) * 0.2f;
+        float turbulence3 = FastCos(y * 0.3f + time * 10.0f) * 0.15f;
+        float flicker = 0.7f + 0.3f * FastSin(time * 20.0f + x * 0.5f);
+        fireIntensity = (heightFactor + turbulence1 + turbulence2 + turbulence3) * flicker;
+        blueFlameEligible = (y > 28);
+    }
+
     fireIntensity = std::clamp(fireIntensity, 0.0f, 1.0f);
-    
+
     uint8_t fireR, fireG, fireB;
-    
+
     if (fireIntensity > 0.8f) {
-        // White-hot core
-        float t = (fireIntensity - 0.8f) / 0.2f;
+        float t = (fireIntensity - 0.8f) * 5.0f;
         fireR = 255;
         fireG = 255;
         fireB = (uint8_t)(255 * (1.0f - t));
     } else if (fireIntensity > 0.6f) {
-        // Yellow/orange
-        float t = (fireIntensity - 0.6f) / 0.2f;
+        float t = (fireIntensity - 0.6f) * 5.0f;
         fireR = 255;
         fireG = (uint8_t)(255 * t);
         fireB = 0;
     } else if (fireIntensity > 0.3f) {
-        // Orange/red
-        float t = (fireIntensity - 0.3f) / 0.3f;
+        float t = (fireIntensity - 0.3f) * 3.33333333f;
         fireR = 255;
         fireG = (uint8_t)(255 * t * 0.6f);
         fireB = 0;
     } else {
-        // Dark red/black
-        float t = fireIntensity / 0.3f;
+        float t = fireIntensity * 3.33333333f;
         fireR = (uint8_t)(255 * t * 0.5f);
         fireG = 0;
         fireB = 0;
     }
-    
-    // Blue flame at the base (gas fire effect)
-    if (y > 28 && fireIntensity > 0.7f) {
+
+    if (blueFlameEligible && fireIntensity > 0.7f) {
         fireB = (uint8_t)std::min(255, fireB + 80);
         fireG = (uint8_t)std::min(255, fireG + 40);
     }
 
-    float brightness = std::max(r,std::max(g,b)) / 255.0f;
-    
-    float rr = (fireR * brightness);
-    float gg = (fireG * brightness);
-    float bb = (fireB * brightness);
-    
-    // Blend with original color based on shader strength
+    float brightness = std::max(r, std::max(g, b)) * (1.0f / 255.0f);
+
+    float rr = fireR * brightness;
+    float gg = fireG * brightness;
+    float bb = fireB * brightness;
+
     float strength = std::clamp(shaderStrength, 0.0f, 1.0f);
     r = (uint8_t)(r * (1.0f - strength) + rr * strength);
     g = (uint8_t)(g * (1.0f - strength) + gg * strength);
     b = (uint8_t)(b * (1.0f - strength) + bb * strength);
 }
 
-void ShaderProcessor::ShaderTexture(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType &shdr, float &shaderStrength){
+void ShaderProcessor::ShaderTexture(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb){
     
     // Simple UV mapping - map screen coordinates directly to texture
     if (ShaderProcessor::Texture != nullptr) {
@@ -185,7 +281,7 @@ uint8_t colors_g[5] = {255, 153, 190, 153, 255};
 uint8_t colors_b[5] = {255, 190, 190, 190, 255};
     
 
-void ShaderProcessor::ShaderTrans(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType &shdr, float &shaderStrength){
+void ShaderProcessor::ShaderTrans(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb){
     //Fuck transphobes
     float time = ShaderProcessor::Time * 0.001f;
     
@@ -265,27 +361,128 @@ void ShaderProcessor::ShaderTrans(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g
     b = (uint8_t)(b * (1.0f - strength) + bb * strength);
 }
 
-void ShaderProcessor::UpdateColorByShader(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType &shdr, float &shaderStrength){
+
+void ShaderProcessor::ShaderFFT(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b,
+                                      ShaderType shdr, float shaderStrength, FrameBuffer *fb){
+
+     constexpr int MAX_RADIUS = 32;
+    constexpr unsigned long STEP_MS = 20;
+
+    static int circleHue[MAX_RADIUS + 1];
+    static bool initialized = false;
+    static unsigned long lastStepTime = 0;
+
+    // Adaptive range tracking
+    static float runningMax = 1000.0f;  // start low so it climbs quickly
+    static float runningMin = 0.0f;
+
+    if (!initialized) {
+        for (int i = 0; i <= MAX_RADIUS; ++i) circleHue[i] = -1;
+        initialized = true;
+        lastStepTime = ShaderProcessor::Time;
+    }
+
+    unsigned long rawTime = ShaderProcessor::Time;
+
+    while (rawTime - lastStepTime >= STEP_MS) {
+        for (int radius = MAX_RADIUS; radius > 0; --radius) {
+            circleHue[radius] = circleHue[radius - 1];
+        }
+
+        int bandCount = g_fft.getBandCount();
+
+        // Use peak energy across bands (ignoring near-silent ones), not the average
+        float peak = 0.0f;
+        for (int i = 0; i < bandCount; ++i) {
+            int v = g_fft.getBandValue(i);
+            if (v < 0) v = 0;
+            if (v > 200000) v = 200000;
+            if (v < 1000) continue; // ignore near-silent bins entirely for peak purposes
+            if (v > peak) peak = (float)v;
+        }
+
+        // --- Adaptive normalization ---
+        // Max slowly rises to track loud moments, decays slowly so it doesn't get stuck high forever
+        if (peak > runningMax) {
+            runningMax = peak;
+        } else {
+            runningMax = runningMax * 0.999f + peak * 0.001f; // slow decay toward recent levels
+        }
+        // Min slowly tracks the quiet floor
+        if (peak < runningMin || runningMin == 0.0f) {
+            runningMin = peak;
+        } else {
+            runningMin = runningMin * 0.995f + peak * 0.005f;
+        }
+
+        float range = std::max(runningMax - runningMin, 1.0f); // avoid div-by-zero
+        float normalized = std::clamp((peak - runningMin) / range, 0.0f, 1.0f);
+
+        constexpr float SPAWN_THRESHOLD = 0.05f;
+        if (normalized >= SPAWN_THRESHOLD) {
+            circleHue[0] = (int)(normalized * 255.0f);
+        } else {
+            circleHue[0] = -1;
+        }
+
+        lastStepTime += STEP_MS;
+    }
+
+    uint16_t sizeX = fb->GetSizeX();
+    uint16_t sizeY = fb->GetSizeY();
+    float cx = sizeX * 0.5f;
+    float cy = sizeY * 0.5f;
+
+    float dx = x - cx;
+    float dy = y - cy;
+    float dist = sqrtf(dx * dx + dy * dy);
+
+    int ringRadius = (int)(dist + 0.5f);
+
+    if (ringRadius > MAX_RADIUS || circleHue[ringRadius] < 0) {
+        return;
+    }
+
+    float brightness = std::max(r, std::max(g, b)) / 255.0f;
+
+    uint8_t rippleR, rippleG, rippleB;
+    Hsv2Rgb((uint8_t)circleHue[ringRadius], 255, (uint8_t)(brightness * 255.0f), rippleR, rippleG, rippleB);
+
+    float strength = std::clamp(shaderStrength, 0.0f, 1.0f);
+    r = (uint8_t)(r * (1.0f - strength) + rippleR * strength);
+    g = (uint8_t)(g * (1.0f - strength) + rippleG * strength);
+    b = (uint8_t)(b * (1.0f - strength) + rippleB * strength);
+}
+
+void ShaderProcessor::UpdateColorByShader(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb){
     switch (shdr)
     {
     case SHADER_NONE:
-        ShaderNone(x, y, r, g, b, shdr, shaderStrength);
+        ShaderNone(x, y, r, g, b, shdr, shaderStrength, fb);
         break;
     
     case SHADER_RAINBOW:
-        ShaderRainbow(x, y, r, g, b, shdr, shaderStrength);
+        ShaderRainbow(x, y, r, g, b, shdr, shaderStrength, fb);
+        break;
+    case SHADER_FFT:
+        if (g_fft.isRunning())
+            ShaderFFT(x, y, r, g, b, shdr, shaderStrength, fb);
         break;
 
     case SHADER_FIRE:
-        ShaderFire(x, y, r, g, b, shdr, shaderStrength);  
+        ShaderFire(x, y, r, g, b, shdr, shaderStrength, fb);  
         break;
     
     case SHADER_TEXTURE:
-        ShaderTexture(x, y, r, g, b, shdr, shaderStrength);  
+        ShaderTexture(x, y, r, g, b, shdr, shaderStrength, fb);  
+        break;
+    
+    case SHADER_ROW_SHIFT:
+        ShaderRowShift(x, y, r, g, b, shdr, shaderStrength, fb);  
         break;
     
     case SHADER_TRANS:
-        ShaderTrans(x, y, r, g, b, shdr, shaderStrength);  
+        ShaderTrans(x, y, r, g, b, shdr, shaderStrength, fb);  
         break;
     
     default:

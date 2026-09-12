@@ -12,8 +12,8 @@ extern Animation g_animation;
 Panda_SSD1306 OledScreen::display(OLED_SCREEN_WIDTH, OLED_SCREEN_HEIGHT, &Wire, -1, OLED_SCREEN_CLOCK_FREQ);
 bool OledScreen::consoleMode = false;
 PSRAMList<PSRAMString> OledScreen::lines;
-uint8_t *OledScreen::DisplayFace[2] = {nullptr, nullptr};
-uint8_t OledScreen::screenFlipId = 0;
+uint8_t *OledScreen::DisplayFace = nullptr;
+
 
 uint32_t OledScreen::swapTimer = 0;
 
@@ -21,8 +21,7 @@ PSRAMVector<OledIcon> OledScreen::icons;
 
 bool OledScreen::Start(){
     
-    OledScreen::DisplayFace[0] = (uint8_t*)ps_malloc(sizeof(uint8_t) * CANVAS_WIDTH * CANVAS_HEIGHT);
-    OledScreen::DisplayFace[1] = (uint8_t*)ps_malloc(sizeof(uint8_t) * CANVAS_WIDTH * CANVAS_HEIGHT);
+    OledScreen::DisplayFace = (uint8_t*)ps_malloc(sizeof(uint8_t) * CANVAS_WIDTH * CANVAS_HEIGHT);
 
     if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)){
         Serial.println(F("SSD1306 allocation failed"));
@@ -58,9 +57,9 @@ void OledScreen::MarkPixel(uint16_t x, uint16_t y, uint8_t red, uint8_t green, u
     }
     uint16_t byteId = x + y * CANVAS_WIDTH;
     if (((red | green | blue) & 0xE0) != 0) { 
-        OledScreen::DisplayFace[0][byteId] = 1;
+        OledScreen::DisplayFace[byteId] = 1;
     }else{
-        OledScreen::DisplayFace[0][byteId] = 0;
+        OledScreen::DisplayFace[byteId] = 0;
     }
 }
 int OledScreen::CreateIcon(std::vector<uint8_t> iconData, int width, int height){
@@ -106,7 +105,7 @@ void OledScreen::DrawPanelFaceToScreen(int xx, int yy, int scale){
     int ptr = 0;
     for (int y = 0; y < CANVAS_HEIGHT; y++) {
         for (int x = 0; x < CANVAS_WIDTH; x++) {
-            uint8_t pixel = OledScreen::DisplayFace[OledScreen::screenFlipId % 2][ptr++];
+            uint8_t pixel = OledScreen::DisplayFace[ptr++];
             for (int dy = 0; dy < scale; dy++) {
                 for (int dx = 0; dx < scale; dx++) {
                     display.drawPixel(xx + x * scale + dx + 1, 

@@ -84,7 +84,7 @@ uint8_t getPanelBrightness()
 int ClearScreen()
 {
   Devices::Display->clearScreen();
-  memset(OledScreen::DisplayFace[0], 0, sizeof(uint8_t) * CANVAS_WIDTH * CANVAS_HEIGHT);
+  memset(OledScreen::DisplayFace, 0, sizeof(uint8_t) * CANVAS_WIDTH * CANVAS_HEIGHT);
   return 0;
 }
 

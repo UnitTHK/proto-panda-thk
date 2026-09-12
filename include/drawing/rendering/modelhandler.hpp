@@ -13,7 +13,7 @@ class ModelHandler {
             pixelBitmap = (uint8_t*)heap_caps_aligned_alloc( 32,  CANVAS_HEIGHT * (CANVAS_WIDTH/8), MALLOC_CAP_8BIT);
         }
     
-        void RenderScene(std::vector<Model*> mdls);
+        void RenderScene(std::vector<Model*> mdls, ShaderType shader, float shaderStrenght);
         void RenderModels(std::vector<Model*> mdls);
 
         int addModel(Model *m){

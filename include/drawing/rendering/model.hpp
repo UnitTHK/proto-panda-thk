@@ -1,6 +1,6 @@
 #pragma once 
 #include "drawing/rendering/primitives.hpp"
-#include "drawing/rendering/shader.hpp"
+#include "drawing/framebuffer.hpp"
 #include "tools/config_default.hpp"
 
 #include "esp_dsp.h"
@@ -41,7 +41,7 @@ class PointGroups{
 
 class Model {
     public:
-        Model():triangleCount(0),aux1(nullptr),aux2(nullptr),aux3(nullptr),color(nullptr),accumulatedOperation(true),batchOperations(false),visible(true), m_shader(SHADER_NONE),shaderStrenght(1.0f){
+        Model():triangleCount(0),aux1(nullptr),aux2(nullptr),aux3(nullptr),color(nullptr),accumulatedOperation(true),batchOperations(false),visible(true){
             bones.setModel(this);
         };
         void Clear(){
@@ -53,8 +53,6 @@ class Model {
             accumulatedOperation = true;
             batchOperations = false;
             visible = true;
-            m_shader = SHADER_NONE;
-            shaderStrenght = 1.0f;
         }
         bool Begin(int sz);
         void Free();
@@ -81,10 +79,7 @@ class Model {
         void SetPointPosition(uint32_t pointId, Vec2f pos);
         void TranslatePoint(uint32_t pointid, Vec2f pos);
 
-        void SetShaderWithStrenght(ShaderType t, float strenght=1.0f);
-        ShaderType GetShader(){
-            return m_shader;
-        };
+       
 
         int GetSize(){ return triangleCount;};
         int GetId(){ return id;};
@@ -122,17 +117,14 @@ class Model {
         bool needRecalculate;
         bool visible;
 
-        ShaderType m_shader;
-        float shaderStrenght;
-
         void SetTriangle(int i, TriangleData aux);
         void SetTriangleF(int i, Vec2f p1, Vec2f p2, Vec2f p3, uint16_t color);
 
         TriangleData GetTriangle(int i);
-        void RasterTriangleWithBitmap(ModelHandler *s, int i);
+        void RasterTriangleWithBitmap(ModelHandler *s, int i, FrameBuffer &fb);
         
-        inline void RasterTriangle(ModelHandler *s, int i){
-            return RasterTriangleWithBitmap(s, i);
+        inline void RasterTriangle(ModelHandler *s, int i, FrameBuffer &fb){
+            return RasterTriangleWithBitmap(s, i, fb);
         }
 };
 
