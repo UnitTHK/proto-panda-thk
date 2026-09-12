@@ -647,9 +647,16 @@ end
 function _M.handleMenu(dt)
 
     local mode = digitalRead(EDIT_MODE_PIN)
+    if EDIT_MODE_PIN == 0 then
+        mode = nil
+    end
     local modeBoot = digitalRead(0)
-    if _M.editbutton_state ~= mode or _M.bootbutton_state ~= modeBoot then  
-        if mode == 1 or modeBoot == 0 then
+
+    local modeReleased = (mode and _M.editbutton_state ~= mode) and mode == 0
+    local bootReleased = (mode and _M.bootbutton_state ~= modeBoot) and modeBoot == 1
+
+    if (mode and _M.editbutton_state ~= mode) or _M.bootbutton_state ~= modeBoot then  
+        if bootReleased or modeReleased then
             _M.readyToPairCount = false
             if not _M.manualPairing and configloader.Get().edit_mode_cycle_animation == true then  
                 expressions.Next()
@@ -663,11 +670,15 @@ function _M.handleMenu(dt)
         _M.bootbutton_state = modeBoot
         _M.editbutton_state = mode
     end
-    if _M.readyToPairCount and (mode == 0 or modeBoot == 1) and _M.holdTimer < millis() then  
+    if _M.readyToPairCount and (mode == 1 or modeBoot == 0) and _M.holdTimer < millis() then  
         if getConnectedClientsCount() < drivers.maxClients then
             _M.holdTimer = 999999999
-            drivers.beginPairing()
-            _M.manualPairing = true
+            if drivers.pairing_mode then  
+                drivers.stopPairing()
+            else
+                drivers.beginPairing()
+                _M.manualPairing = true
+            end
         end
     end
 
