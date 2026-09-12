@@ -108,13 +108,18 @@ void EditMode::CheckBeginEditMode(){
       
       OledScreen::display.display();
       delay(200);
+
       bool shouldLeave = digitalRead(EDIT_MODE_PIN) != EDIT_ENABLE_LOGIC_LEVEL;
+      if (EDIT_MODE_PIN == 0 || bootTriggered){
+        shouldLeave = false;
+      }
 
       #ifdef USE_BOOT_PIN_FOR_EDIT_MODE
       if (bootTriggered && digitalRead(0) == HIGH){
         shouldLeave = true;
       }
       #endif
+
       if (shouldLeave)
       {
         DoBegin(false);
