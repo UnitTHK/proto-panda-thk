@@ -18,32 +18,40 @@ Você está lidando com ESP32, este microcontrolador usa 3.3v, então se você a
 
 Alguns conversores buck têm problemas com capacitores extras, então o capacitor de 1000~4700uF necessário mais adiante no guia pode ser desnecessário.
 
+# Controle remoto
+
+Antes de começar, saiba que esse guia é apenas para o cerebro do protogen. Porém ele tem menus e uma interface que você pode navegar, trocar de expressões... Tecnicamente você pode só fazer esse guia e você terá algo que irá ligar e ficará sempre em uma expressão facil animada.
+
+Você pode montar o controle remoto (guia pendente) ou comprar algum [que é compativel.](../README.pt-br.md#bluetooth). Na real que qualquer dispositivo BLE que se apresente como HID (mouse, teclado, joystick) também serve.
+
+Ou você inventa alguma gambiarra usando os GPIOs que sobrarem!
+
 # Peças necessárias
 
 1) Um dos conversores buck 5v 3A: [opção 1](https://aliexpress.com/item/1005005505907937.html) / [opção 2](https://pt.aliexpress.com/item/1005011601387749.html) / [opção 3](https://pt.aliexpress.com/item/1005006009759175.html)
-2) Gatilho PD: [opção 1](https://aliexpress.com/item/1005007889747084.html) / [opção 2](https://s.click.aliexpress.com/e/_c4CyOWHT)
-3) [Módulo SD Card](https://pt.aliexpress.com/item/1005009221606482.html)
+2) [PD trigger](https://s.click.aliexpress.com/e/_c2xbSuxf) / [opção 2](https://s.click.aliexpress.com/e/_c3LJNmWd)
+3) [Modulo SD](https://s.click.aliexpress.com/e/_c3xlSvmh) / [opção 2 (se você pegar esse, ele usa 5v ao invéz de 3.3v)](https://s.click.aliexpress.com/e/_c4limTVB)
 4) [Tela OLED](https://aliexpress.com/item/1005006141235306.html)
 5) [Placa de desenvolvimento ESP32 N16R8](https://aliexpress.com/item/1005009906920237.html)
 6) [Buzzer 5 ou 3.3v](https://aliexpress.com/item/1005006201550296.html)
 7) [Conector para o HUB75](https://s.click.aliexpress.com/e/_c3ach1LL) (Pegue o de 16 pinos)
 8) [Fita de LED WS2812b](https://pt.aliexpress.com/item/1005007989431712.html)
-9) [Fan 40x10mm 5v](https://pt.aliexpress.com/item/1005009148488355.html)
+9) [Fan 40x10mm 5v](https://s.click.aliexpress.com/e/_c4rnJI4p)
 10) Algumas barras de pino fêmea e macho
-11) Resistores (1k, 3k e 10k)
-12) Um capacitor eletrolítico entre 1000uF a 4700uF de pelo menos 6.3v (pode ser dispensável)
-13) Qualquer botão push
-14) Uma placa perfurada (perf board)
-15) Alguns fios
-16) Um cartão SD (tente pegar o menor que encontrar, tipo 2gb~8gb)
-17) [2x painéis HUB75 P2.5](https://pt.aliexpress.com/item/1005006224809039.html)
-18) Cabo de alimentação HUB75 (geralmente vem com o painel HUB75 quando você compra)
-19) 2x cabos de dados HUB75 (geralmente vem com o painel HUB75 quando você compra)
+11) Um capacitor eletrolítico entre 1000uF a 4700uF de pelo menos 6.3v (pode ser dispensável)
+12) Qualquer botão push
+13) Uma placa perfurada (perf board)
+14) Alguns fios
+15) Um cartão SD (tente pegar o menor que encontrar, tipo 2gb~8gb)
+16) [2x painéis HUB75 P2.5](https://s.click.aliexpress.com/e/_c3NcWQdx)
+17) Cabo de alimentação HUB75 (geralmente vem com o painel HUB75 quando você compra)
+18) 2x cabos de dados HUB75 (geralmente vem com o painel HUB75 quando você compra)
 
 Opcionais para uso externo:
 
 * [Sensor de toque para boop (recomendado)](https://aliexpress.com/item/1005006246380749.html)
-* [Receptor IR VS1838B se usar controle IR](https://pt.aliexpress.com/item/1005009595736688.html)
+* [Microphone MAX4466  (recomendado)](https://s.click.aliexpress.com/e/_c3W22E65)
+* [Receptor IR VS1838B se usar controle IR no lugar do bluetooth](https://s.click.aliexpress.com/e/_c4W1KXQv)
 
 # Ferramentas
 
@@ -312,3 +320,56 @@ Agora, certifique-se de que está conectado ao 5V, meça a saída e deve ser 5v.
 Ligue e você deverá vê-lo funcionando!!
 
 ![](./diy-assembly43.png)
+
+Se a tela ligar e você ver que nem acima com o rosto verde. Então quer dizer que o painel que você comprou é levemente diferente. Os paineis HUB75 são RGB, mas alguns são RBG. Se o seu ficar verde, é por que ele é RBG. 
+É uma boa corrigir isso agora, se não depois você vai ter problema por que vai fazer uma expressão de uma cor e ela vai sair de outra.
+Corrigir isso é bem simples. Abra o cartão SD, e edite o `hardware.json`. Lá dentro tem essa parte:
+```json
+            "pins": {
+                "dma_r1": 12,
+                "dma_r2": 20,
+                "dma_g1": 10,
+                "dma_g2": 18,
+                "dma_b1": 11,
+                "dma_b2": 19,
+                "dma_a": 17,
+                "dma_b": 16,
+                "dma_c": 15,
+                "dma_d": 7,
+                "dma_lat": 5,
+                "dma_oe": 4,
+                "dma_clk": 6
+            }
+```
+Basta inverter o `dma_g1` com o `dma_b1` e o `dma_g2` com o `dma_b2`. Ficando assim:
+```json
+            "pins": {
+                "dma_r1": 12,
+                "dma_r2": 20,
+                "dma_b1": 10,
+                "dma_b2": 18,
+                "dma_g1": 11,
+                "dma_g2": 19,
+                "dma_a": 17,
+                "dma_b": 16,
+                "dma_c": 15,
+                "dma_d": 7,
+                "dma_lat": 5,
+                "dma_oe": 4,
+                "dma_clk": 6
+            }
+```
+Depois só colocar o cartão de volta e reiniciar.
+
+Agora para a segunda tela, conecte desse forma:
+
+![](diy-assembly44.png)
+
+Antes tenha certeza que está na orientação certa! O cabo do protopanda deve ir para a seta apontando para dentro do primeiro painel. O segundo cabo flat deve sair pela saida do primeiro painel e entrar na entrada do primeiro que aponta com a seta para dentro!
+
+
+## Extras
+
+Se você quiser conectar o sensor de boop, microfone ou receptor de infra vermelho. Use esse guia, pois é o esquematico final:
+
+![Diagram](./diy-schematic.png "Electronics schematic") 

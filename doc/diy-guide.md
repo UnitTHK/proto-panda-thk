@@ -18,11 +18,19 @@ You're dealing with ESP32, this microcontroller uses 3.3v, so if you accidentall
 
 Some buck converters have issues with extra capacitors, so the 1000~4700uF capacitor needed further in the guide might be unnecessary.
 
+# Remote Controller
+
+Befor starting, this guide will allow you to make the brain of your protogen. But you will need a way to control it, navigate trouh menus. Technically you can just make it and use it as is, its gonna be in a single animated facial expression.
+
+You can either build an remote controller (the guide is pending) or get a [compatible one.](../README.md#bluetooth). Technically any HID device that uses BLE should be compatible as long it shows itself as a mouse, keyboard or joystick.
+
+OR you hack something using the avaliable gpios to control!
+
 # Parts needed
 
 1) One of the 5v 3A buck converters: [option 1](https://aliexpress.com/item/1005005505907937.html) / [option 2](https://pt.aliexpress.com/item/1005011601387749.html) / [option 3](https://pt.aliexpress.com/item/1005006009759175.html)
-2) PD trigger: [Option 1](https://aliexpress.com/item/1005007889747084.html) / [option 2](https://pt.aliexpress.com/item/1005012106478427.html)
-3) [SD Card module](https://pt.aliexpress.com/item/1005009221606482.html)
+2) PD trigger: [Option 1](https://s.click.aliexpress.com/e/_c2xbSuxf) / [option 2](https://s.click.aliexpress.com/e/_c3LJNmWd)
+3) [SD Card module](https://s.click.aliexpress.com/e/_c3xlSvmh) / [option 2 (if you get this one, power it using the 5v instead of 3.3)](https://s.click.aliexpress.com/e/_c4limTVB)
 4) [OLED screen](https://aliexpress.com/item/1005006141235306.html)
 5) [ESP32 N16R8 dev board](https://aliexpress.com/item/1005009906920237.html)
 6) [Buzzer 5 or 3.3v](https://aliexpress.com/item/1005006201550296.html)
@@ -30,20 +38,20 @@ Some buck converters have issues with extra capacitors, so the 1000~4700uF capac
 8) [WS2812b LED strip](https://pt.aliexpress.com/item/1005007989431712.html)
 9) [40x10mm 5v fan](https://s.click.aliexpress.com/e/_c3s50nXT)
 10) Some female pin headers
-11) Some resistors (1k, 3k and 10k)
-12) An electrolytic capacitor between 1000uF to 4700uF at least 6.3v
-13) Any push button
-14) A perf board
-15) Some wires
-16) An SD card (try getting the smallest one you can find, like 2gb~8gb)
-17) [2x P2.5 HUB75 panel](https://pt.aliexpress.com/item/1005006224809039.html)
-18) HUB75 power cable (usually comes with the HUB75 panel when you buy it)
-19) 2x HUB75 data cable (usually comes with the HUB75 panel when you buy it)
+11) An electrolytic capacitor between 1000uF to 4700uF at least 6.3v
+12) Any push button
+13) A perf board
+14) Some wires
+15) An SD card (try getting the smallest one you can find, like 2gb~8gb)
+16) [2x P2.5 HUB75 panel](https://s.click.aliexpress.com/e/_c3NcWQdx)
+17) HUB75 power cable (usually comes with the HUB75 panel when you buy it)
+18) 2x HUB75 data cable (usually comes with the HUB75 panel when you buy it)
 
 Optionals for external use:
 
 * [Touch sensor for boop (recommended)](https://aliexpress.com/item/1005006246380749.html)
-* [IR receiver VS1838B if using IR controller](https://pt.aliexpress.com/item/1005009595736688.html)
+* [Microphone MAX4466  (recommended)](https://s.click.aliexpress.com/e/_c3W22E65)
+* [IR receiver VS1838B if using IR controller instead of bluetooth](https://s.click.aliexpress.com/e/_c4W1KXQv)
 
 # Tools
 
@@ -313,3 +321,55 @@ Now, make sure it's connected to 5V, measure the output and it should be 5v. If 
 Power it on and you should see it working!!
 
 ![](./diy-assembly43.png)
+
+If the screen turns on like the photo above with a green face, then it means that the panel you got is slightly different. The HUB75 panels are usually RGB, but some are RBG. If yours shows up as green, thats because they're RBG. 
+You should do the steps bellow, unless you want to have problems with colors not amtching in the future.
+To fix this is very easy, get the SD card and open the `hardware.json`, you will see this inside:
+```json
+            "pins": {
+                "dma_r1": 12,
+                "dma_r2": 20,
+                "dma_g1": 10,
+                "dma_g2": 18,
+                "dma_b1": 11,
+                "dma_b2": 19,
+                "dma_a": 17,
+                "dma_b": 16,
+                "dma_c": 15,
+                "dma_d": 7,
+                "dma_lat": 5,
+                "dma_oe": 4,
+                "dma_clk": 6
+            }
+```
+Just swap the values of `dma_g1` with `dma_b1`, and `dma_g2` with `dma_b2`. Looking like this
+```json
+            "pins": {
+                "dma_r1": 12,
+                "dma_r2": 20,
+                "dma_b1": 10,
+                "dma_b2": 18,
+                "dma_g1": 11,
+                "dma_g2": 19,
+                "dma_a": 17,
+                "dma_b": 16,
+                "dma_c": 15,
+                "dma_d": 7,
+                "dma_lat": 5,
+                "dma_oe": 4,
+                "dma_clk": 6
+            }
+```
+Save and put back the card and restart your proto.
+
+Now to connect the second screen, you need to daisy-chain those. Connect one screen to another like this;
+
+![](diy-assembly44.png)
+
+Make sure the controller goes on the arrow pointing inward, and the second ribbon cable go from the arrow pointing outward strainght to the inward of the second panel.
+
+## Extras
+
+If you want to connect an boop sensor, microphone or infrared receiver, connect them using this schematic which is the final one:
+
+![Diagram](./diy-schematic.png "Electronics schematic") 
