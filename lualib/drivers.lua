@@ -189,7 +189,7 @@ function drivers.WrapUp()
         local confs = configloader.Get()
         if confs.input.pairController then
             log("Connect by paired only")
-            setScanModeByAddress(false)
+            setScanModeByAddress(true)
             drivers.registerPaired = true
             local pairedRaw = dictGet("paired_data") or {}
             if pairedRaw ~= "" then  

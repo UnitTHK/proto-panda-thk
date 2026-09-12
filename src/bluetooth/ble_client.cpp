@@ -56,7 +56,7 @@ bool BleManager::TryConnectByService(const NimBLEAdvertisedDevice* advertisedDev
       }
     }
 
-    Logger::Info("Found Device: %s\n", advertisedDevice->getName().c_str());
+    Logger::Info("Found Device: %s", advertisedDevice->getName().c_str());
     Logger::Info("Address: %s\n", advertisedDevice->getAddress().toString().c_str());
 
     if (canConnect && !toConnect.ready){
@@ -72,7 +72,7 @@ bool BleManager::TryConnectByService(const NimBLEAdvertisedDevice* advertisedDev
 
 void AdvertisedDeviceCallbacks::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
   if (bleObj->canLogDiscoveredClients()){
-    Logger::Info("[BLE] Advertised Device found: %s", advertisedDevice->toString().c_str());
+    Logger::Info("[BLE][ByAddress=%d] Advertised Device found: %s", bleObj->IsScanningByAddress(), advertisedDevice->toString().c_str());
   }
 
   xSemaphoreTake(bleObj->m_mutex, portMAX_DELAY);
