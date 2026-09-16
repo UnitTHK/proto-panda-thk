@@ -6,7 +6,7 @@
     "enableHidControllers": true,
     "pairController": true,
     "maxBleDevices": 1,
-    "drivers": ["panda", "BLE-M3", "beauty-r1"]
+    "drivers": ["panda", "SelfieCom"]
   },
   "infrared": [
     {
@@ -35,40 +35,17 @@
     "panda.buttons.4": "BUTTON_UP",
     "panda.buttons.5": "BUTTON_CONFIRM",
     "panda.buttons.6": "BUTTON_BACK",
-    "panda.buttons.7": "BUTTON_AUX_A",
-    "panda.buttons.8": "BUTTON_AUX_B",
-
     "joystick.right_hat=5": "BUTTON_LEFT",
     "joystick.right_hat=3": "BUTTON_DOWN",
     "joystick.right_hat=1": "BUTTON_RIGHT",
     "joystick.right_hat=7": "BUTTON_UP",
     "joystick.buttons.4": "BUTTON_CONFIRM",
     "joystick.buttons.1": "BUTTON_BACK",
-
-    "joystick..left_analog_x<-10": "BUTTON_LEFT",
-    "joystick..left_analog_y>10": "BUTTON_DOWN",
-    "joystick..left_analog_x>10": "BUTTON_RIGHT",
-    "joystick..left_analog_y<-7": "BUTTON_UP",
-
     "generic.buttons.4": "BUTTON_LEFT",
     "generic.buttons.1": "BUTTON_DOWN",
     "generic.buttons.3": "BUTTON_RIGHT",
     "generic.buttons.2": "BUTTON_UP",
     "generic.buttons.5": "BUTTON_CONFIRM",
-    "generic.buttons.6": "BUTTON_BACK",
-    "keyboard.button=180": "BUTTON_DOWN",
-    "keyboard.button=179": "BUTTON_UP",
-    "keyboard.button=181": "BUTTON_RIGHT",
-    "keyboard.button=182": "BUTTON_LEFT",
-    "keyboard.button=205": "BUTTON_CONFIRM",
-    "keyboard.button=234": "BUTTON_BACK",
-    "keyboard.button=233": "BUTTON_AUX_A",
-    "keyboard.button=64": "BUTTON_AUX_B",
-    "mouse.x>10": "BUTTON_LEFT",
-    "mouse.x<-10": "BUTTON_RIGHT",
-    "mouse.y<-10": "BUTTON_UP",
-    "mouse.y>10": "BUTTON_DOWN",
-    "mouse.buttons.1": "BUTTON_CONFIRM",
-    "mouse.buttons.4": "BUTTON_BACK"
+    "generic.buttons.8": "BUTTON_BACK"
   }
 }
