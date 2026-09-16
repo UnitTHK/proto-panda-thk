@@ -93,7 +93,7 @@ Cache file version to invalidate cache in case of firmware update
 #define OLED_SCREEN_WIDTH 128
 #define OLED_SCREEN_HEIGHT 64 
 #define OLED_SCREEN_ADDRESS 0x3C 
-#define OLED_SCREEN_ROTATION 2
+#define OLED_SCREEN_ROTATION 4
 #define OLED_SCREEN_CLOCK_FREQ 800000
 
 

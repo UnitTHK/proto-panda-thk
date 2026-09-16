@@ -8,18 +8,24 @@ function _M.onSetup()
 	setPanelManaged(false)
 	print("vamo")
 	_M.wah = {}
-	_M.timer = 1000
-	_M.frame = 1
 	_M.wah[1] = decodePng("/scripts/wah3.png")
 	_M.wah[2] = decodePng("/scripts/wah2.png")
 	_M.wah[3] = decodePng("/scripts/wah1.png")
 	_M.wah[4] = _M.wah[2]
+	_M.restart()
 
+end
+
+function _M.restart()
+	_M.timer = 1000
+	_M.frame = 1
 	_M.y = 0
 	_M.x = 10
 	_M.vy = 70
 	_M.grounded = false
-
+	_M.gameOver = false
+	oledClearScreen()
+	oledDisplay()
 
 	_M.keks = {}
 	_M.stars = {}
@@ -28,7 +34,30 @@ function _M.onSetup()
 	for i=1,7 do
 		_M.stars[#_M.stars+1] = {x = math.random(1,63), y=math.random(1,30)}
 	end
+end
 
+function _M.drawText(x,y, str, color)
+	for i=1,#str do
+		drawPanelChar(x + (i-1)*6, y, string.byte(str:sub(i,i)), color, 0, 1)
+	end
+end
+
+function _M.drawGameOver()
+	local red = color565(255, 40, 40)
+	local white = color565(255, 255, 255)
+	_M.drawText(20, 3, "GAME", red)
+	_M.drawText(84, 3, "GAME", red)
+	_M.drawText(20, 12, "OVER", red)
+	_M.drawText(84, 12, "OVER", red)
+	_M.drawText(8, 22, "UP OR OK", white)
+	_M.drawText(72, 22, "UP OR OK", white)
+	oledClearScreen()
+	oledSetFontSize(1)
+	oledSetCursor(37, 7)
+	oledDrawText("GAME OVER")
+	oledSetCursor(40, 19)
+	oledDrawText("UP OR OK")
+	oledDisplay()
 end
 
 function _M.starDraw(x,y)
@@ -56,6 +85,19 @@ end
 
 function _M.onLoop(dt)
 	clearPanelBuffer()
+	if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED or (input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_UP) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED) then
+		_M.shouldStop = true
+		return true
+	end
+
+	if _M.gameOver then
+		_M.drawGameOver()
+		flipPanelBuffer()
+		if input.readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED or input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then
+			_M.restart()
+		end
+		return
+	end
 
 	local pix = 1
 	local wahframe = _M.wah[_M.frame]
@@ -134,6 +176,9 @@ function _M.onLoop(dt)
 	for i,b in pairs(keks) do 
 		keks[i] = keks[i] - 30 * dt
 		_M.kektus(math.floor(keks[i]),30)
+		if keks[i] >= _M.x + 6 and keks[i] <= _M.x + 18 and _M.y + 13 >= 23 then
+			_M.gameOver = true
+		end
 		if (keks[i] <= 0) then 
 			rm = i
 		end
@@ -144,10 +189,6 @@ function _M.onLoop(dt)
 
 
 	flipPanelBuffer()
-	if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED or (input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_UP) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED) then 
-		_M.shouldStop = true
-		return true
-	end
 end 
 
 function _M.onClose()

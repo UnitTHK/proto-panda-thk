@@ -1,7 +1,7 @@
 {
     "wifi_ssid":{
-        "name": "Your 2.4ghz network name here",
-        "password": "your password"
+        "name": "Floofy Furs - 10G",
+        "password": "HaveAFunTime"
     },
     "access_point":{
         "name": "protopanda",
