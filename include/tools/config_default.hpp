@@ -59,7 +59,7 @@ Cache file version to invalidate cache in case of firmware update
 */
 //If you're using a SD card module, change this to 1.
 //But if you're using a smd assembled version, you can leave it as 2
-#define PANDA_SD_MODE 2
+#define PANDA_SD_MODE 1
 
 /*
     SPI

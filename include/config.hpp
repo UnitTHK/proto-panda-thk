@@ -70,7 +70,7 @@
 //If using the full range of pins (data1 and 2, set this to false)
 //#define MMC_ONE_BIT true  
 //Set 2 to MMC and 1 to SD
-//#define PANDA_SD_MODE 2
+#define PANDA_SD_MODE 1
 
 /*
  Oled screen
@@ -79,7 +79,7 @@
 //#define OLED_SCREEN_WIDTH 128
 //#define OLED_SCREEN_HEIGHT 64 
 //#define OLED_SCREEN_ADDRESS 0x3C 
-//#define OLED_SCREEN_ROTATION 2
+#define OLED_SCREEN_ROTATION 2
 
 
 //#define USE_LIDAR

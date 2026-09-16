@@ -113,12 +113,18 @@
                 "_comment": "If pin_side is undefined, it defaults to 'left'",
                 "pin_side": "left",
                 "led_count": 64,
-                "mode": "pride"
+                "mode": "color_rgb",
+                "r": 0,
+                "g": 240,
+                "b": 255
             },
             {
                 "pin_side": "right",
                 "led_count": 64,
-                "mode": "pride"
+                "mode": "color_rgb",
+                "r": 0,
+                "g": 240,
+                "b": 255
             }
         ]
 
