@@ -327,6 +327,25 @@ bool beginRadio(int powerLevel)
   Devices::CalculateMemmoryUsage();
   return true;
 }
+
+void setBleSecurityIOCap(int cap)
+{
+  g_remoteControls.setSecurityIOCap(cap);
+}
+
+void setBleSecurityAuth(bool bonding, bool mitm, bool sc)
+{
+  g_remoteControls.setSecurityAuth(bonding, mitm, sc);
+}
+
+void setBleSecurityPasskey(int pin)
+{
+  if (pin < 0){
+    Logger::Error("[BLE] Passkey must be between 0 and 999999");
+    return;
+  }
+  g_remoteControls.setSecurityPasskey((uint32_t)pin);
+}
 #endif
 
 bool startIR(){
@@ -543,6 +562,9 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("startBLE", startBLE);
   m_lua->FuncRegister("hasBLEStarted", hasBLEStarted);
   m_lua->FuncRegister("startBLERadio", beginRadio);
+  m_lua->FuncRegister("setBleSecurityIOCap", setBleSecurityIOCap);
+  m_lua->FuncRegister("setBleSecurityAuth", setBleSecurityAuth);
+  m_lua->FuncRegister("setBleSecurityPasskey", setBleSecurityPasskey);
 
   m_lua->FuncRegister("isElementIdConnected", isElementIdConnected);
 
@@ -588,6 +610,13 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("getFps", Devices::getAutoFps); 
   m_lua->FuncRegister("getFreeHeap", Devices::getFreeHeap); 
   m_lua->FuncRegister("getTotalHeap", Devices::getTotalHeap); 
+  m_lua->FuncRegister("getInternalGyroscopeZ", Devices::getInternalGyroscopeZ);
+  m_lua->FuncRegister("getInternalGyroscopeY", Devices::getInternalGyroscopeY);
+  m_lua->FuncRegister("getInternalGyroscopeX", Devices::getInternalGyroscopeX);
+  m_lua->FuncRegister("getInternalTemperature", Devices::getInternalTemperature);
+  m_lua->FuncRegister("getInternalAccelerometerZ", Devices::getInternalAccelerometerZ);
+  m_lua->FuncRegister("getInternalAccelerometerY", Devices::getInternalAccelerometerY);
+  m_lua->FuncRegister("getInternalAccelerometerX", Devices::getInternalAccelerometerX);
   #ifdef USE_SERVO
   m_lua->FuncRegisterOptional("startServos", Devices::StartServos, 180, 0.125f, 0.025f, 50);
   m_lua->FuncRegister("servoPause", Devices::ServoPause);
@@ -882,6 +911,12 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("ESP_PWR_LVL_P15", (int)ESP_PWR_LVL_P15);
   m_lua->setConstant("ESP_PWR_LVL_P18", (int)ESP_PWR_LVL_P18);
   m_lua->setConstant("ESP_PWR_LVL_P21", (int)ESP_PWR_LVL_P21);
+
+  m_lua->setConstant("BLE_IO_DISPLAY_ONLY", (int)BLE_HS_IO_DISPLAY_ONLY);
+  m_lua->setConstant("BLE_IO_DISPLAY_YESNO", (int)BLE_HS_IO_DISPLAY_YESNO);
+  m_lua->setConstant("BLE_IO_KEYBOARD_ONLY", (int)BLE_HS_IO_KEYBOARD_ONLY);
+  m_lua->setConstant("BLE_IO_NO_INPUT_OUTPUT", (int)BLE_HS_IO_NO_INPUT_OUTPUT);
+  m_lua->setConstant("BLE_IO_KEYBOARD_DISPLAY", (int)BLE_HS_IO_KEYBOARD_DISPLAY);
   #endif
 
 
@@ -905,6 +940,7 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("SHADER_NONE",         (int)SHADER_NONE);
   m_lua->setConstant("SHADER_RAINBOW",      (int)SHADER_RAINBOW);
   m_lua->setConstant("SHADER_FIRE",         (int)SHADER_FIRE);
+  m_lua->setConstant("SHADER_WOBBLE",         (int)SHADER_WOBBLE);
   m_lua->setConstant("SHADER_TEXTURE",      (int)SHADER_TEXTURE);
   m_lua->setConstant("SHADER_TRANS",        (int)SHADER_TRANS);
   
@@ -969,11 +1005,13 @@ bool LuaInterface::Start()
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","AddCharacteristics",&BleServiceHandler::AddCharacteristics);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","SetOnConnectCallback",&BleServiceHandler::SetOnConnectCallback);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","SetOnDisconnectCallback",&BleServiceHandler::SetOnDisconnectCallback);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","SetEncryptionRequired",&BleServiceHandler::SetEncryptionRequired);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","WriteToCharacteristics",&BleServiceHandler::WriteToCharacteristics, true);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","GetCharacteristics",&BleServiceHandler::GetCharacteristicsFromOurService);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","AddNameRequired",&BleServiceHandler::AddNameRequired);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","GetServices",&BleServiceHandler::GetServices);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","ReadFromCharacteristics",&BleServiceHandler::ReadFromCharacteristics);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","ReadDescriptor",&BleServiceHandler::ReadDescriptor);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","GetRSSI",&BleServiceHandler::GetRSSI);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","GetClientIdFromControllerId",&BleServiceHandler::GetClientIdFromControllerId);
 
