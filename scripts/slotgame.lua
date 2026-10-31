@@ -84,7 +84,7 @@ function _M.onSetup()
 	if not _M.sprites then
 		_M.sprites = Sprite()
 		_M.sprites:SetTransparencyColor(0)
-		_M.sprites:LoadFromPng("/scripts/sprites/bell.png") -- bell 0
+		_M.sprites:LoadFromPng("/scripts/sprites/bread.png") -- bread 0
 		_M.sprites:LoadFromPng("/scripts/sprites/seven.png") -- seven 1
 		_M.sprites:LoadFromPng("/scripts/sprites/cherry.png") -- cherry 2
 		_M.sprites:LoadFromPng("/scripts/sprites/coconut.png") -- coconut 3
