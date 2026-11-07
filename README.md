@@ -426,18 +426,36 @@ To control it, you can:
 
 If you find a generic BLE HID device, like a mouse or keyboard, it should be compatible in some way.
 
+For SelfieCom, set `input.drivers` in [keybinds.json](keybinds.json) to
+`["panda", "hid", "SelfieCom"]`. The HID core driver must be listed explicitly;
+the old `enableHidControllers` option no longer enables it. After updating,
+copy both [keybinds.json](keybinds.json) and
+[SelfieCom.lua](lualib/drivers/SelfieCom.lua) to the same paths on the device
+using edit mode, then reboot. Custom drivers now access generic button state
+through `drivers.inputs.generic`, not `drivers.generic`.
+
+Older joystick bindings must also be migrated: use `joystick.hat_left=1`,
+`joystick.hat_down=1`, `joystick.hat_right=1`, and `joystick.hat_up=1`
+instead of `joystick.right_hat`. For button bindings, use `joystick.button&N`,
+where `N` is the 1-based button number, instead of indexing `joystick.buttons`.
+Invalid joystick bindings stop input startup even when using SelfieCom.
+
+Run the host-side driver regression checks with `lua test/test_selfiecom.lua`
+(Lua 5.4, with BLE callbacks mocked). These load the actual configuration,
+verify input startup reaches scanning, and check keybinds and packet handling.
+
 ### Keybind
 
 Currently, the default keybinds are:
 ```json
 {
   "keybinds":{
-    "joystick.right_hat=5": "BUTTON_LEFT",
-    "joystick.right_hat=3": "BUTTON_DOWN",
-    "joystick.right_hat=1": "BUTTON_RIGHT",
-    "joystick.right_hat=7": "BUTTON_UP",
-    "joystick.buttons.4": "BUTTON_CONFIRM",
-    "joystick.buttons.1": "BUTTON_BACK",
+    "joystick.hat_left=1": "BUTTON_LEFT",
+    "joystick.hat_down=1": "BUTTON_DOWN",
+    "joystick.hat_right=1": "BUTTON_RIGHT",
+    "joystick.hat_up=1": "BUTTON_UP",
+    "joystick.button&1": "BUTTON_CONFIRM",
+    "joystick.button&4": "BUTTON_BACK",
 
     "beauty.buttons.4": "BUTTON_LEFT",
     "beauty.buttons.1": "BUTTON_DOWN",

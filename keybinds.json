@@ -3,7 +3,7 @@
     "//comment0": "The current avaliable input modes are 'infrared', 'ble' and 'none'",
     "mode": "BLE",
     "maxBleDevices": 1,
-    "drivers": ["panda", "SelfieCom"]
+    "drivers": ["panda", "hid", "SelfieCom"]
   },
   "infrared": [
     {
@@ -32,12 +32,12 @@
     "panda.buttons.4": "BUTTON_UP",
     "panda.buttons.5": "BUTTON_CONFIRM",
     "panda.buttons.6": "BUTTON_BACK",
-    "joystick.right_hat=5": "BUTTON_LEFT",
-    "joystick.right_hat=3": "BUTTON_DOWN",
-    "joystick.right_hat=1": "BUTTON_RIGHT",
-    "joystick.right_hat=7": "BUTTON_UP",
-    "joystick.buttons.4": "BUTTON_CONFIRM",
-    "joystick.buttons.1": "BUTTON_BACK",
+    "joystick.hat_left=1": "BUTTON_LEFT",
+    "joystick.hat_down=1": "BUTTON_DOWN",
+    "joystick.hat_right=1": "BUTTON_RIGHT",
+    "joystick.hat_up=1": "BUTTON_UP",
+    "joystick.button&1": "BUTTON_CONFIRM",
+    "joystick.button&4": "BUTTON_BACK",
     "generic.buttons.4": "BUTTON_LEFT",
     "generic.buttons.1": "BUTTON_DOWN",
     "generic.buttons.3": "BUTTON_RIGHT",

@@ -3,7 +3,8 @@
 remote-control/Output/
 remote-control/*.emSession
 bin/
-test/
+test/*
+!test/test_selfiecom.lua
 *.elf
 *.hex
 *.d

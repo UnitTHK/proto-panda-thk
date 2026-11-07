@@ -9,7 +9,7 @@ local selfiecom = {
 }
 
 function selfiecom.processPackets(connectionId, controllerId, data)
-    local dev = drivers.generic[controllerId]
+    local dev = drivers.inputs.generic[controllerId]
     
     if not data or #data < 7 then return end
 
@@ -64,7 +64,7 @@ end
 end
 
 function selfiecom.onUpdate(drivers, i)
-    local dev = drivers.generic[i]
+    local dev = drivers.inputs.generic[i]
     if dev.timeout and dev.timeout < millis() then  
         dev.timeout = nil
         for a = 1, 8 do dev.buttons[a] = 0 end
